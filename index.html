@@ -247,56 +247,48 @@ function add(role, text) {
   chat.scrollTop = chat.scrollHeight;
 }
 
-async function send() {
-  const text = input.value.trim();
-  if (!text) return;
-
-  input.value = "";
-  add("user", text);
+export async function handler(event, context) {
+  let userMessage = "";
 
   try {
-    const res = await fetch("/.netlify/functions/hackoAI", {
+    if (!event.body) throw new Error("No request body");
+
+    const body = JSON.parse(event.body);
+    userMessage = body.text;
+
+    if (!userMessage) throw new Error("Empty text field");
+  } catch (err) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Bad request: " + err.message })
+    };
+  }
+
+  // your API call code here
+  const API_KEY = process.env.OPENROUTER_KEY;
+
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
+        "Authorization": `Bearer ${API_KEY}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({
+        model: "deepseek/deepseek-r1-0528:free",
+        messages: [
+          { role: "system", content: "HackoAI system prompt..." },
+          { role: "user", content: userMessage }
+        ],
+        max_tokens: 20000
+      })
     });
 
-    // 👀 Netlify sometimes returns HTML on error (404/500)
-    const raw = await res.text();
-
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch (e) {
-      console.error("RAW RESPONSE:", raw);
-      add("err", "Server returned non-JSON (check Netlify function)");
-      return;
-    }
-
-    if (!res.ok) {
-      add("err", data.error || "Backend error");
-      return;
-    }
-
-    if (!data.choices || !data.choices[0]) {
-      console.error("BAD DATA:", data);
-      add("err", "Malformed AI response");
-      return;
-    }
-
-    add("bot", data.choices[0].message.content);
-
-  } catch (e) {
-    console.error(e);
-    add("err", "Network / Function crash");
+    const data = await res.json();
+    return { statusCode: 200, body: JSON.stringify(data) };
+  } catch (err) {
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 }
 
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter") send();
-});
-</script>
-</body>
-</html>
+
