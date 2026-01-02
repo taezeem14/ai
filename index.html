@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>HackoAI • Neural Interface</title>
+<title>Old Age Ai • Neuron Saviour</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -184,8 +184,8 @@ button:hover {
 <body>
 <div class="app">
   <header>
-    HackoAI
-    <span> • Secure Neural Shell</span>
+    Old Age Ai
+    <span> • Save Your Neurons</span>
   </header>
 
   <div id="chat"></div>
@@ -193,13 +193,13 @@ button:hover {
   <footer>
     <div class="prompt">&gt;</div>
     <input id="input" placeholder="enter command…" />
-    <button onclick="send()">EXEC</button>
+    <button onclick="send()">SEND</button>
   </footer>
 </div>
 <script>
 /* ================= CONFIG ================= */
 
-const MAX_TOKENS = 1000;
+const MAX_TOKENS = 1100;
 
 /* ========================================= */
 
@@ -238,7 +238,7 @@ function add(role, text) {
 
   const prefix =
     role === "user" ? "<span class='prefix'>You:</span> " :
-    role === "bot"  ? "<span class='prefix'>HackoAI:</span> "  :
+    role === "bot"  ? "<span class='prefix'>NS:</span> "  :
                       "<span class='prefix'>⚠</span> ";
 
   d.innerHTML = prefix + renderMarkdown(text);
@@ -282,6 +282,7 @@ input.addEventListener("keydown", e => {
 </script>
 </body>
 </html>
+
 
 
 
