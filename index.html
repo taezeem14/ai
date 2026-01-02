@@ -79,7 +79,7 @@ header {
 }
 
 header span {
-  opacity: .6;
+  opacity: .9;
   font-size: 12px;
 }
 
@@ -185,7 +185,7 @@ button:hover {
 <div class="app">
   <header>
     NueroSave Ai
-    <span> • Save Your Neurons</span>
+    <span> • Save Your Neurons And Save Your Mind</span>
   </header>
 
   <div id="chat"></div>
@@ -238,7 +238,7 @@ function add(role, text) {
 
   const prefix =
     role === "user" ? "<span class='prefix'>You:</span> " :
-    role === "bot"  ? "<span class='prefix'>NS:</span> "  :
+    role === "bot"  ? "<span class='prefix'>NeuroSave:</span> "  :
                       "<span class='prefix'>⚠</span> ";
 
   d.innerHTML = prefix + renderMarkdown(text);
@@ -282,6 +282,7 @@ input.addEventListener("keydown", e => {
 </script>
 </body>
 </html>
+
 
 
 
