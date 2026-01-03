@@ -35,29 +35,26 @@ Rules:
         max_tokens: 20000
       };
     } else { // image mode
-      url = "https://openrouter.ai/api/v1/images/generations";
-      payload = {
-        model: "deepseek/deepseek-r1-0528:free",
-        prompt: userMessage,
-        n: 1
-      };
-    }
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(JSON.stringify(data));
-
-    return { statusCode: 200, body: JSON.stringify(data) };
-  } catch (err) {
-    console.error(err);
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
-  }
+  url = "https://openrouter.ai/api/v1/images/generations";
+  payload = {
+    model: "google/gemini-2.5-flash-image-preview:free", // ✅ proper image model
+    prompt: userMessage,
+    modalities: ["image"], // must include this
+    n: 1,
+    size: "1024x1024" // optional: 512x512 or 1024x1024
+  };
 }
+
+const res = await fetch(url, {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${API_KEY}`,
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify(payload)
+});
+
+const data = await res.json();
+if (!res.ok) throw new Error(JSON.stringify(data));
+
+return { statusCode: 200, body: JSON.stringify(data) };
