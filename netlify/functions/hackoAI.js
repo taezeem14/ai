@@ -37,7 +37,7 @@ Rules:
     } else { // image mode
   url = "https://openrouter.ai/api/v1/images/generations";
   payload = {
-    model: "google/gemini-2.5-flash-image-preview:free", // ✅ proper image model
+    model: "google/gemini-2.5-flash-image-preview", // ✅ proper image model
     prompt: userMessage,
     modalities: ["image"], // must include this
     n: 1,
@@ -58,3 +58,4 @@ const data = await res.json();
 if (!res.ok) throw new Error(JSON.stringify(data));
 
 return { statusCode: 200, body: JSON.stringify(data) };
+
