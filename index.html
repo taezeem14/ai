@@ -258,8 +258,18 @@ async function send() {
       add("bot", img);
       return;
     }
+
+    // CHAT MODE
+    loadingMsg.remove();
+    add("bot", data.response || "No response");
+  } catch (err) {
+    loadingMsg.remove();
+    add("bot", "Error: " + err.message);
+  }
+}
+
 input.addEventListener("keydown", e => { if(e.key === "Enter") send(); });
 </script>
-
 </body>
 </html>
+
