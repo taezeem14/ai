@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>HackoAI • Chat Interface</title>
+<title>HackoAI • Dark Chat</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -10,34 +10,36 @@
 
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f4f4f5;
+  background: #121212;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  color: #e5e7eb;
 }
 
 .app {
   width: 100%;
   max-width: 600px;
   height: 90vh;
-  background: #fff;
+  background: #1f1f1f;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   overflow: hidden;
 }
 
 header {
   padding: 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #2c2c2c;
   font-weight: 600;
   font-size: 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f9fafb;
+  background: #1a1a1a;
+  color: #f3f4f6;
 }
 
 #chat {
@@ -47,7 +49,8 @@ header {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: #f9fafb;
+  background: #1f1f1f;
+  scroll-behavior: smooth;
 }
 
 .msg {
@@ -56,47 +59,72 @@ header {
   border-radius: 12px;
   line-height: 1.4;
   word-wrap: break-word;
+  position: relative;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeIn 0.3s forwards;
+  transition: background 0.2s, color 0.2s;
 }
 
-.user {
+.msg.user {
   align-self: flex-end;
   background: #2563eb;
   color: #fff;
 }
 
-.bot {
+.msg.bot {
   align-self: flex-start;
-  background: #e5e7eb;
-  color: #111827;
+  background: #2c2c2c;
+  color: #e5e7eb;
 }
 
-img {
+.msg img {
   max-width: 100%;
   border-radius: 12px;
   margin-top: 6px;
+}
+
+.msg .timestamp {
+  font-size: 10px;
+  opacity: 0.5;
+  position: absolute;
+  bottom: -16px;
+  right: 8px;
+}
+
+.msg:hover {
+  filter: brightness(1.05);
 }
 
 footer {
   display: flex;
   gap: 8px;
   padding: 12px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border-top: 1px solid #2c2c2c;
+  background: #1a1a1a;
 }
 
 input {
   flex: 1;
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #3a3a3a;
+  background: #2a2a2a;
+  color: #e5e7eb;
   font-size: 15px;
   outline: none;
 }
 
+input::placeholder {
+  color: #a1a1aa;
+}
+
 select {
   border-radius: 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #3a3a3a;
   padding: 8px;
+  background: #2a2a2a;
+  color: #e5e7eb;
 }
 
 button {
@@ -112,6 +140,28 @@ button {
 button:hover {
   filter: brightness(1.1);
 }
+
+/* Spinner */
+.spinner {
+  border: 3px solid #3a3a3a;
+  border-top: 3px solid #2563eb;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  animation: spin 1s linear infinite;
+  margin-left: 8px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 </style>
 </head>
 <body>
@@ -119,10 +169,6 @@ button:hover {
 <div class="app">
   <header>
     HackoAI
-    <select id="mode">
-      <option value="chat">Chat</option>
-      <option value="image">Image</option>
-    </select>
   </header>
 
   <div id="chat"></div>
@@ -138,18 +184,31 @@ const chat = document.getElementById("chat");
 const input = document.getElementById("input");
 const mode = document.getElementById("mode");
 
-function add(role, content) {
+function add(role, content, isLoading=false) {
   const d = document.createElement("div");
   d.className = "msg " + role;
 
-  if (typeof content === "string") {
+  const ts = document.createElement("span");
+  ts.className = "timestamp";
+  const now = new Date();
+  ts.textContent = now.getHours().toString().padStart(2,'0') + ':' +
+                   now.getMinutes().toString().padStart(2,'0');
+
+  if (isLoading) {
+    const spinner = document.createElement("span");
+    spinner.className = "spinner";
+    d.textContent = "HackoAI is typing";
+    d.appendChild(spinner);
+  } else if (typeof content === "string") {
     d.textContent = content;
   } else {
     d.appendChild(content);
   }
 
+  d.appendChild(ts);
   chat.appendChild(d);
   chat.scrollTop = chat.scrollHeight;
+  return d;
 }
 
 async function send() {
@@ -157,6 +216,9 @@ async function send() {
   if (!text) return;
   input.value = "";
   add("user", text);
+
+  // Show loading spinner
+  const loadingMsg = add("bot", null, true);
 
   try {
     const res = await fetch("/.netlify/functions/hackoAI", {
@@ -168,20 +230,22 @@ async function send() {
     const raw = await res.text();
     let data;
 
-    try {
-      data = JSON.parse(raw);
-    } catch {
+    try { data = JSON.parse(raw); } 
+    catch { 
+      loadingMsg.remove();
       add("bot", "Server returned invalid JSON");
       return;
     }
 
     if (!res.ok) {
+      loadingMsg.remove();
       add("bot", data.error || "Backend error");
       return;
     }
 
     // IMAGE MODE
     if (mode.value === "image") {
+      loadingMsg.remove();
       if (!data.data || !data.data[0]) {
         add("bot", "Image generation failed");
         return;
@@ -194,14 +258,17 @@ async function send() {
 
     // CHAT MODE
     if (!data.choices || !data.choices[0]) {
+      loadingMsg.remove();
       add("bot", "Malformed AI response");
       return;
     }
 
+    loadingMsg.remove();
     add("bot", data.choices[0].message.content);
 
   } catch (e) {
     console.error(e);
+    loadingMsg.remove();
     add("bot", "Network / Function crash");
   }
 }
