@@ -188,6 +188,33 @@ const chat = document.getElementById("chat");
 const input = document.getElementById("input");
 const mode = document.getElementById("mode");
 
+  function escapeHTML(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function renderMarkdown(text) {
+  // handle code blocks ```
+  text = text.replace(/```([\s\S]*?)```/g, (m, code) => {
+    return `<pre><code>${escapeHTML(code)}</code></pre>`;
+  });
+
+  // inline code `
+  text = text.replace(/`([^`]+)`/g, (m, code) => {
+    return `<code>${escapeHTML(code)}</code>`;
+  });
+
+  // bold **
+  text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+  // italics *
+  text = text.replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+  return text;
+}
+
 function add(role, content, isLoading=false) {
   const d = document.createElement("div");
   d.className = "msg " + role;
@@ -282,3 +309,4 @@ input.addEventListener("keydown", e => { if(e.key === "Enter") send(); });
 
 </body>
 </html>
+
