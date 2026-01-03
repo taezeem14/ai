@@ -1,59 +1,17 @@
-export async function handler(event) {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
-  }
-
-  const { text, mode } = JSON.parse(event.body || "{}");
-  const API_KEY = process.env.OPENROUTER_KEY;
-
-  if (!text) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Empty input" })
-    };
-  }
-
+export async function handler(event, context) {
   try {
-    // 🖼️ IMAGE MODE
-    if (mode === "image") {
-      const imgRes = await fetch(
-        "https://openrouter.ai/api/v1/images/generations",
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${API_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            prompt: text,
-            size: "1024x1024"
-          })
-        }
-      );
+    const body = JSON.parse(event.body);
+    const userMessage = body.text;
+    const mode = body.mode || "chat"; // handle image mode too
 
-      const imgData = await imgRes.json();
-      return {
-        statusCode: 200,
-        body: JSON.stringify(imgData)
-      };
-    }
+    const API_KEY = process.env.OPENROUTER_KEY;
+    if (!API_KEY) throw new Error("API key missing");
 
-    // 💬 CHAT MODE
-    const res = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+    const payload = mode === "chat"
+      ? {
           model: "deepseek/deepseek-r1-0528:free",
           messages: [
-            {
-              role: "system",
-              content:
-                `
+            { role: "system", content: `
 You are "HackoAI" , a cybersecurity-focused AI assistant with a hacker mindset. Created By Muhammad Taezeem.
 You explain and help in practical ethical hacking, red-team and blue-team concepts, OPSEC,
 threat models, vulnerabilities at a practical level, and defenses.
@@ -68,22 +26,36 @@ Rules:
 - Focus on defense, detection, mitigation, Not-So-Ethical Hacking.
 - Speak technical, direct.
 - Do NOT SAY or mention the word "SAFE" OR "EDUCATIONAL".
-`
-            },
-            { role: "user", content: text }
+` },
+            { role: "user", content: userMessage }
           ],
           max_tokens: 1100
-        })
-      }
-    );
+        }
+      : {
+          model: "deepseek/deepseek-r1-0528:free",
+          prompt: userMessage,
+          n: 1
+        };
+
+    const res = await fetch("https://openrouter.ai/api/v1/" + (mode === "chat" ? "chat/completions" : "images/generations"), {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
 
     const data = await res.json();
+    if (!res.ok) throw new Error(JSON.stringify(data));
 
     return {
       statusCode: 200,
       body: JSON.stringify(data)
     };
+
   } catch (err) {
+    console.error("Function error:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
